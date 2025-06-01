@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El. pašto parašo generatorius</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        
+        .color-inputs {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .color-group {
+            flex: 1;
+        }
+        
+        .color-group input[type="color"] {
+            width: 50px;
+            height: 40px;
+            padding: 0;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .auto-detect-btn {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: transform 0.2s;
+        }
+        
+        .auto-detect-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+        }
+        
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        .success-message {
+            background: #4CAF50;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .social-inputs {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .generate-btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin: 20px 0;
+            transition: transform 0.2s;
+        }
+        
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+        
+        .preview-section {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid #eee;
+        }
+        
+        .preview-container {
+            background: #fafafa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        
+        .code-container {
+            background: #2d2d2d;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            position: relative;
+        }
+        
+        .code-container pre {
+            color: #f8f8f2;
+            margin: 0;
+            overflow-x: auto;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .copy-btn:hover {
+            background: #45a049;
+        }
+        
+        .instructions {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border-left: 4px solid #2196F3;
+        }
+        
+        .instructions h3 {
+            margin-top: 0;
+            color: #1976D2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📧 El. pašto parašo generatorius</h1>
+        
+                    <div class="instructions">
+            <h3>Instrukcijos:</h3>
+            <p>Užpildykite bent vardą ir spauskite "Generuoti parašą". Sistema automatiškai prisitaikys prie turimo turinio kiekio ir sukurs gražų parašą.</p>
+            <p><strong>Adaptyvus dizainas:</strong> Mažiau informacijos = didesni šriftai ir centruotas išdėstymas. Daugiau informacijos = kompaktiškesnis dizainas.</p>
+            <p><strong>Spalvų aptikimas:</strong> Automatinis spalvų aptikimas veiks geriau su paveikslėliais iš imgur.com, unsplash.com ar kitų CORS-palaikančių svetainių.</p>
+        </div>
+
+        <form id="signatureForm">
+            <div class="form-group">
+                <label for="fullName">Vardas Pavardė *</label>
+                <input type="text" id="fullName" placeholder="Jonas Jonaitis" required>
+            </div>
+
+            <div class="form-group">
+                <label for="company">Įmonės pavadinimas</label>
+                <input type="text" id="company" placeholder="UAB Pavyzdys">
+            </div>
+
+            <div class="form-group">
+                <label for="logoUrl">Logotipo URL</label>
+                <input type="url" id="logoUrl" placeholder="https://example.com/logo.png">
+            </div>
+
+            <div class="form-group">
+                <label>Spalvos</label>
+                <div class="color-inputs">
+                    <div class="color-group">
+                        <label for="accentColor">Akcento spalva (įmonė, linija)</label>
+                        <input type="color" id="accentColor" value="#FF6B35">
+                    </div>
+                    <div class="color-group">
+                        <label for="detailColor">Detalių spalva (socialiniai, motto)</label>
+                        <input type="color" id="detailColor" value="#7CB342">
+                    </div>
+                </div>
+                <button type="button" class="auto-detect-btn" onclick="autoDetectColors()" id="autoDetectBtn">
+                    🎨 Automatiškai aptikti spalvas iš logo
+                </button>
+                <div class="success-message" id="colorSuccessMessage">
+                    ✅ Spalvos sėkmingai aptiktos!
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Socialiniai tinklai</label>
+                <div class="social-inputs">
+                    <label>Facebook:</label>
+                    <input type="url" id="facebook" placeholder="https://facebook.com/jusu-puslapis">
+                    
+                    <label>LinkedIn:</label>
+                    <input type="url" id="linkedin" placeholder="https://linkedin.com/in/jusu-profilis">
+                    
+                    <label>Instagram:</label>
+                    <input type="url" id="instagram" placeholder="https://instagram.com/jusu-profilis">
+                    
+                    <label>Twitter:</label>
+                    <input type="url" id="twitter" placeholder="https://twitter.com/jusu-profilis">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="motto">Motto/šūkis</label>
+                <input type="text" id="motto" placeholder="Jūsų sėkmės partneris">
+            </div>
+
+            <button type="button" class="generate-btn" onclick="generateSignature()">
+                ✨ Generuoti parašą
+            </button>
+        </form>
+
+        <div class="preview-section" id="previewSection" style="display: none;">
+            <h2>Parašo peržiūra:</h2>
+            <div class="preview-container" id="preview"></div>
+            
+            <h3>HTML kodas:</h3>
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyCode()">Kopijuoti</button>
+                <pre id="htmlCode"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Automatinis spalvų aptikimas iš logo
+        function autoDetectColors() {
+            const logoUrl = document.getElementById('logoUrl').value;
+            const btn = document.getElementById('autoDetectBtn');
+            const successMsg = document.getElementById('colorSuccessMessage');
+            
+            if (!logoUrl) {
+                alert('Pirmiausia įveskite logotipo URL!');
+                return;
+            }
+            
+            btn.textContent = '🔄 Analizuoju logo...';
+            btn.classList.add('loading');
+            successMsg.style.display = 'none';
+            
+            // Pirmiausia bandome su CORS proxy
+            tryWithProxy(logoUrl).then(success => {
+                if (!success) {
+                    // Jei nepavyko, bandome tiesiai
+                    tryDirectLoad(logoUrl);
+                }
+            });
+        }
+        
+        function tryWithProxy(logoUrl) {
+            return new Promise((resolve) => {
+                const proxyUrls = [
+                    `https://cors-anywhere.herokuapp.com/${logoUrl}`,
+                    `https://api.allorigins.win/raw?url=${encodeURIComponent(logoUrl)}`,
+                    logoUrl // Jei tai imgur, unsplash ar kita CORS-friendly svetainė
+                ];
+                
+                let currentProxyIndex = 0;
+                
+                function tryNextProxy() {
+                    if (currentProxyIndex >= proxyUrls.length) {
+                        resolve(false);
+                        return;
+                    }
+                    
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    
+                    img.onload = function() {
+                        processImage(img);
+                        resolve(true);
+                    };
+                    
+                    img.onerror = function() {
+                        currentProxyIndex++;
+                        tryNextProxy();
+                    };
+                    
+                    img.src = proxyUrls[currentProxyIndex];
+                }
+                
+                tryNextProxy();
+            });
+        }
+        
+        function tryDirectLoad(logoUrl) {
+            // Jei visos proxy nepavyko, bandome be crossOrigin
+            const img = new Image();
+            
+            img.onload = function() {
+                try {
+                    processImage(img);
+                } catch (e) {
+                    showFallbackOptions();
+                }
+            };
+            
+            img.onerror = function() {
+                showFallbackOptions();
+            };
+            
+            img.src = logoUrl;
+        }
+        
+        function processImage(img) {
+            try {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+                
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const colors = extractDominantColors(imageData);
+                
+                // Nustatome spalvas
+                if (colors.length >= 2) {
+                    document.getElementById('accentColor').value = colors[0];
+                    document.getElementById('detailColor').value = colors[1];
+                } else if (colors.length === 1) {
+                    document.getElementById('accentColor').value = colors[0];
+                    document.getElementById('detailColor').value = adjustBrightness(colors[0], -20);
+                } else {
+                    // Jei nerasta spalvų, naudojame atsitiktines verslo spalvas
+                    const businessColors = ['#2E86AB', '#A23B72', '#F18F01', '#C73E1D', '#7209B7'];
+                    document.getElementById('accentColor').value = businessColors[Math.floor(Math.random() * businessColors.length)];
+                    document.getElementById('detailColor').value = businessColors[Math.floor(Math.random() * businessColors.length)];
+                }
+                
+                const btn = document.getElementById('autoDetectBtn');
+                const successMsg = document.getElementById('colorSuccessMessage');
+                
+                btn.textContent = '🎨 Automatiškai aptikti spalvas iš logo';
+                btn.classList.remove('loading');
+                successMsg.style.display = 'block';
+                
+                setTimeout(() => {
+                    successMsg.style.display = 'none';
+                }, 3000);
+                
+            } catch (e) {
+                console.error('Spalvų aptikimo klaida:', e);
+                showFallbackOptions();
+            }
+        }
+        
+        function showFallbackOptions() {
+            const btn = document.getElementById('autoDetectBtn');
+            btn.textContent = '🎨 Automatiškai aptikti spalvas iš logo';
+            btn.classList.remove('loading');
+            
+            const fallbackMessage = `
+                Nepavyko automatiškai aptikti spalvų dėl CORS apribojimų.
+                
+                Patarimai:
+                1. Naudokite paveikslėlius iš imgur.com, unsplash.com ar kitų CORS-friendly svetainių
+                2. Įkelkite logotipą į imgur.com ir naudokite tą nuorodą
+                3. Pasirinkite spalvas rankiniu būdu pagal savo logotipą
+                
+                Ar norite, kad sugeneruočiau verslo spalvas?
+            `;
+            
+            if (confirm(fallbackMessage)) {
+                // Generuojame profesionalias verslo spalvas
+                const businessColorPairs = [
+                    ['#2E86AB', '#A23B72'], // Mėlyna + Rožinė
+                    ['#F18F01', '#C73E1D'], // Oranžinė + Raudona
+                    ['#7209B7', '#2E86AB'], // Violetinė + Mėlyna
+                    ['#16537e', '#4a7c59'], // Tamsiai mėlyna + Žalia
+                    ['#d62828', '#f77f00']  // Raudona + Oranžinė
+                ];
+                
+                const randomPair = businessColorPairs[Math.floor(Math.random() * businessColorPairs.length)];
+                document.getElementById('accentColor').value = randomPair[0];
+                document.getElementById('detailColor').value = randomPair[1];
+                
+                document.getElementById('colorSuccessMessage').textContent = '✅ Sugeneruotos profesionalios spalvos!';
+                document.getElementById('colorSuccessMessage').style.display = 'block';
+                
+                setTimeout(() => {
+                    document.getElementById('colorSuccessMessage').style.display = 'none';
+                }, 3000);
+            }
+        }
+        
+        // Spalvų ekstraktavimo algoritmas
+        function extractDominantColors(imageData) {
+            const data = imageData.data;
+            const colorMap = new Map();
+            const skipPixels = 4; // Kas ketvirtą pikselį analizuojame (greičiui)
+            
+            // Skaičiuojame spalvų dažnį
+            for (let i = 0; i < data.length; i += 4 * skipPixels) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                const a = data[i + 3];
+                
+                // Praleidžiame permatomas ir per šviesias/tamsias spalvas
+                if (a < 128 || (r > 240 && g > 240 && b > 240) || (r < 15 && g < 15 && b < 15)) {
+                    continue;
+                }
+                
+                // Grupuojame panašias spalvas
+                const colorKey = `${Math.floor(r/10)*10}-${Math.floor(g/10)*10}-${Math.floor(b/10)*10}`;
+                
+                if (colorMap.has(colorKey)) {
+                    colorMap.set(colorKey, {
+                        ...colorMap.get(colorKey),
+                        count: colorMap.get(colorKey).count + 1,
+                        r: colorMap.get(colorKey).r + r,
+                        g: colorMap.get(colorKey).g + g,
+                        b: colorMap.get(colorKey).b + b
+                    });
+                } else {
+                    colorMap.set(colorKey, { r, g, b, count: 1 });
+                }
+            }
+            
+            // Surikiuojame pagal dažnį
+            const sortedColors = Array.from(colorMap.values())
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 5); // Imame top 5 spalvas
+            
+            // Konvertuojame į hex ir grąžiname 2 skirtingiausias spalvas
+            const hexColors = sortedColors.map(color => {
+                const avgR = Math.floor(color.r / color.count);
+                const avgG = Math.floor(color.g / color.count);
+                const avgB = Math.floor(color.b / color.count);
+                return rgbToHex(avgR, avgG, avgB);
+            });
+            
+            // Filtruojame spalvas pagal kontrastą
+            const distinctColors = [];
+            for (const color of hexColors) {
+                if (distinctColors.length === 0) {
+                    distinctColors.push(color);
+                } else {
+                    let isDistinct = true;
+                    for (const existingColor of distinctColors) {
+                        if (getColorDistance(color, existingColor) < 100) {
+                            isDistinct = false;
+                            break;
+                        }
+                    }
+                    if (isDistinct) {
+                        distinctColors.push(color);
+                    }
+                }
+                if (distinctColors.length >= 2) break;
+            }
+            
+            return distinctColors;
+        }
+        
+        // Pagalbinės funkcijos
+        function rgbToHex(r, g, b) {
+            return "#" + [r, g, b].map(x => {
+                const hex = x.toString(16);
+                return hex.length === 1 ? "0" + hex : hex;
+            }).join("");
+        }
+        
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+        
+        function getColorDistance(color1, color2) {
+            const rgb1 = hexToRgb(color1);
+            const rgb2 = hexToRgb(color2);
+            return Math.sqrt(
+                Math.pow(rgb1.r - rgb2.r, 2) +
+                Math.pow(rgb1.g - rgb2.g, 2) +
+                Math.pow(rgb1.b - rgb2.b, 2)
+            );
+        }
+        
+        function adjustBrightness(hex, percent) {
+            const rgb = hexToRgb(hex);
+            const adjust = (val, pct) => Math.max(0, Math.min(255, Math.floor(val * (1 + pct / 100))));
+            
+            return rgbToHex(
+                adjust(rgb.r, percent),
+                adjust(rgb.g, percent),
+                adjust(rgb.b, percent)
+            );
+        }
+
+        function generateSignature() {
+            const fullName = document.getElementById('fullName').value;
+            const company = document.getElementById('company').value;
+            const logoUrl = document.getElementById('logoUrl').value;
+            const accentColor = document.getElementById('accentColor').value;
+            const detailColor = document.getElementById('detailColor').value;
+            const motto = document.getElementById('motto').value;
+            
+            // Socialiniai tinklai
+            const facebook = document.getElementById('facebook').value;
+            const linkedin = document.getElementById('linkedin').value;
+            const instagram = document.getElementById('instagram').value;
+            const twitter = document.getElementById('twitter').value;
+
+            if (!fullName || !company || !logoUrl) {
+                alert('Prašome užpildyti visus privalomus laukus!');
+                return;
+            }
+
+            // Socialinių tinklų HTML generavimas
+            let socialHtml = '';
+            
+            if (facebook) {
+                socialHtml += `<a href="${facebook}" style="color: ${detailColor}; text-decoration: none; font-size: 12px; margin-right: 10px;">
+                    <img src="https://cdn-icons-png.flaticon.com/16/124/124010.png" width="16" height="16" style="vertical-align: middle; margin-right: 3px;" alt="Facebook"> Facebook
+                </a>`;
+            }
+            
+            if (linkedin) {
+                socialHtml += `<a href="${linkedin}" style="color: ${detailColor}; text-decoration: none; font-size: 12px; margin-right: 10px;">
+                    <img src="https://cdn-icons-png.flaticon.com/16/124/124011.png" width="16" height="16" style="vertical-align: middle; margin-right: 3px;" alt="LinkedIn"> LinkedIn
+                </a>`;
+            }
+            
+            if (instagram) {
+                socialHtml += `<a href="${instagram}" style="color: ${detailColor}; text-decoration: none; font-size: 12px; margin-right: 10px;">
+                    <img src="https://cdn-icons-png.flaticon.com/16/124/124021.png" width="16" height="16" style="vertical-align: middle; margin-right: 3px;" alt="Instagram"> Instagram
+                </a>`;
+            }
+            
+            if (twitter) {
+                socialHtml += `<a href="${twitter}" style="color: ${detailColor}; text-decoration: none; font-size: 12px; margin-right: 10px;">
+                    <img src="https://cdn-icons-png.flaticon.com/16/124/124021.png" width="16" height="16" style="vertical-align: middle; margin-right: 3px;" alt="Twitter"> Twitter
+                </a>`;
+            }
+
+            const mottoHtml = motto ? `<div style="font-size: 10px; font-style: italic; color: ${detailColor}; padding-top: 5px;">${motto}</div>` : '';
+
+            const signatureHtml = `<table cellpadding="0" cellspacing="0" style="font-family: Arial, sans-serif; color: #333; max-width: 400px;">
+    <tr>
+        <td style="padding: 10px 15px; vertical-align: top;">
+            <img src="${logoUrl}" alt="Logo" style="max-width: 120px; height: auto; display: block;">
+        </td>
+        <td style="border-left: 2px solid ${accentColor}; padding: 10px 15px; vertical-align: top;">
+            <div style="font-size: 16px; font-weight: bold; color: #000000; padding-bottom: 3px;">
+                ${fullName}
+            </div>
+            <div style="font-size: 13px; color: ${accentColor}; padding-bottom: 10px;">
+                ${company}
+            </div>
+            ${socialHtml ? `<div style="padding-bottom: 5px;">${socialHtml}</div>` : ''}
+            ${mottoHtml}
+        </td>
+    </tr>
+</table>`;
+
+            // Rodyti peržiūrą
+            document.getElementById('preview').innerHTML = signatureHtml;
+            document.getElementById('htmlCode').textContent = signatureHtml;
+            document.getElementById('previewSection').style.display = 'block';
+            
+            // Prasukti į peržiūrą
+            document.getElementById('previewSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function copyCode() {
+            const code = document.getElementById('htmlCode').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                const originalText = btn.textContent;
+                btn.textContent = 'Nukopijuota!';
+                btn.style.background = '#4CAF50';
+                
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '#4CAF50';
+                }, 2000);
+            }).catch(err => {
+                alert('Nepavyko nukopijuoti. Pažymėkite tekstą ir spauskite Ctrl+C');
+            });
+        }
+
+        // Pavyzdiniai duomenys užpildymui
+        document.addEventListener('DOMContentLoaded', function() {
+            // Galite iš karto užpildyti kai kuriuos laukus demonstracijai
+        });
+    </script>
+</body>
+</html>
